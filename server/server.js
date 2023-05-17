@@ -46,6 +46,10 @@ io.on("connection", (socket) => {
     // we are sending response to client by saying that you are allowed to join room after "join:room" event handled
     io.to(socket.id).emit("join:room", data);
   });
+
+  socket.on("user:call", ({ to, offer }) => {
+    io.to(to).emit("incomming:call", { from: socket.id, offer });
+  });
 });
 
 server.listen(PORT, () => {
