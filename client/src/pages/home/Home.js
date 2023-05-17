@@ -24,10 +24,13 @@ const Home = () => {
   );
 
   // we are going to handle this handler only after we get response of being joined to room from server
-  const handleJoinRoom = useCallback((data) => {
-    const { emailId, roomId } = data;
-    navigate(`/${roomId}`);
-  }, []);
+  const handleJoinRoom = useCallback(
+    (data) => {
+      const { emailId, roomId } = data;
+      navigate(`/${roomId}`);
+    },
+    [navigate]
+  );
 
   useEffect(() => {
     // this code snippet will run only after "join:room" event handled and send a response from server
@@ -37,7 +40,7 @@ const Home = () => {
     return () => {
       socket.off("join:room", handleJoinRoom);
     };
-  }, [socket]);
+  }, [socket, handleJoinRoom]);
 
   return (
     <div className="home-container">
