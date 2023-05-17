@@ -38,6 +38,11 @@ io.on("connection", (socket) => {
     emailToSocketMapping.set(emailId, socket.id);
     socketidToEmailMapping.set(socket.id, emailId);
 
+    // before any user join specific room we will handle an event "user:joined" to that room so that everyone in that room get notified
+    io.to(roomId).emit("user:joined", { emailId, id: socket.id });
+
+    socket.join(roomId);
+
     // we are sending response to client by saying that you are allowed to join room after "join:room" event handled
     io.to(socket.id).emit("join:room", data);
   });

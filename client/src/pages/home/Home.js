@@ -11,11 +11,6 @@ const Home = () => {
   });
   const { socket } = useContext(SocketContext);
 
-  // const joinedRoomHandler = ({ roomId }) => {
-  //   // console.log("Room joined: ", roomId);
-  //
-  // };
-
   //   we handle this handler for requesting to join room
   const joinHandler = useCallback(
     (e) => {
