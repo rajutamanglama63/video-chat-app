@@ -24,23 +24,22 @@ app.get("/", (req, res) => {
   res.status(200).send("Hello from the server side...");
 });
 
+// this line of code is for tracking which emailId is in which room
 const emailToSocketMapping = new Map();
+const socketidToEmailMapping = new Map();
 
 io.on("connection", (socket) => {
   console.log("Socket connection established...");
 
-  socket.on("join-room", (data) => {
+  socket.on("join:room", (data) => {
     const { roomId, emailId } = data;
     console.log("user: ", emailId, "joinedRoom: ", roomId);
 
     emailToSocketMapping.set(emailId, socket.id);
+    socketidToEmailMapping.set(socket.id, emailId);
 
-    socket.join(roomId);
-
-    // room joined successfully to roomId which client provide from frontend
-    socket.emit("joined-room", { roomId });
-
-    socket.broadcast.to(roomId).emit("user-joined", { emailId });
+    // we are sending response to client by saying that you are allowed to join room after "join:room" event handled
+    io.to(socket.id).emit("join:room", data);
   });
 });
 

@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SocketContext } from "../../context/SocketContext";
 import "./home.css";
@@ -11,24 +11,38 @@ const Home = () => {
   });
   const { socket } = useContext(SocketContext);
 
-  // we are going to handle this handler only after we get response of being joined to room from server
-  const joinedRoomHandler = ({ roomId }) => {
-    // console.log("Room joined: ", roomId);
-    navigate(`/${roomId}`);
-  };
-
-  useEffect(() => {
-    socket.on("joined-room", joinedRoomHandler);
-  }, [socket]);
+  // const joinedRoomHandler = ({ roomId }) => {
+  //   // console.log("Room joined: ", roomId);
+  //
+  // };
 
   //   we handle this handler for requesting to join room
-  const joinHandler = (e) => {
-    e.preventDefault();
-    socket.emit("join-room", {
-      roomId: userData.roomId,
-      emailId: userData.emailId,
-    });
-  };
+  const joinHandler = useCallback(
+    (e) => {
+      e.preventDefault();
+      socket.emit("join:room", {
+        roomId: userData.roomId,
+        emailId: userData.emailId,
+      });
+    },
+    [userData.emailId, userData.roomId, socket]
+  );
+
+  // we are going to handle this handler only after we get response of being joined to room from server
+  const handleJoinRoom = useCallback((data) => {
+    const { emailId, roomId } = data;
+    navigate(`/${roomId}`);
+  }, []);
+
+  useEffect(() => {
+    // this code snippet will run only after "join:room" event handled and send a response from server
+    socket.on("join:room", handleJoinRoom);
+
+    // we also need to off the socket so that we can prevent multiple component re-rendering by de-registering the listener
+    return () => {
+      socket.off("join:room", handleJoinRoom);
+    };
+  }, [socket]);
 
   return (
     <div className="home-container">
