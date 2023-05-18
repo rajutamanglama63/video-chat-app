@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useEffect, useState } from "react";
 import ReactPlayer from "react-player";
 import peer from "../../services/webRTCPeerService";
 import { SocketContext } from "../../context/SocketContext";
+import "./room.css";
 
 const Room = () => {
   const { socket } = useContext(SocketContext);
@@ -21,8 +22,6 @@ const Room = () => {
       video: true,
     });
 
-    // const peer = new WebRTCPeerService();
-
     const offer = await peer.getOffer();
     socket.emit("user:call", { to: remoteSocketId, offer });
     setMyStream(stream);
@@ -37,8 +36,6 @@ const Room = () => {
           video: true,
         });
 
-        // const peer = new WebRTCPeerService();
-
         setMyStream(stream);
         console.log("Incoming Call: ", from, offer);
 
@@ -52,7 +49,6 @@ const Room = () => {
   );
 
   const sendStreams = useCallback(() => {
-    // const peer = new WebRTCPeerService();
     // this code snippet will help to exchange each others video
     for (const track of myStream.getTracks()) {
       peer.peer.addTrack(track, myStream);
@@ -62,7 +58,6 @@ const Room = () => {
   const handleCallResponse = useCallback(
     async ({ from, ans }) => {
       try {
-        // const peer = new WebRTCPeerService();
         await peer.setLocalDescription(ans);
 
         console.log("response back from call receiver");
@@ -77,14 +72,12 @@ const Room = () => {
   // negotiation is need in webRTC to render each others video in each others browser other wise it will not render each other video
   // to see webRTC connection go to chrome://webrtc-internals/ in chrome browser
   const handleNegotiationNeeded = useCallback(async () => {
-    // const peer = new WebRTCPeerService();
     const offer = await peer.getOffer();
     socket.emit("peer:negotiation:needed", { offer, to: remoteSocketId });
   }, [remoteSocketId, socket]);
 
   const handleIncomingNegotiationNeeded = useCallback(
     async ({ from, offer }) => {
-      // const peer = new WebRTCPeerService();
       const ans = await peer.getAnswer(offer);
       socket.emit("peer:negotiation:done", { to: from, ans });
     },
@@ -92,12 +85,10 @@ const Room = () => {
   );
 
   const handleNegotiationNeededFinal = useCallback(async ({ from, ans }) => {
-    // const peer = new WebRTCPeerService();
     await peer.setLocalDescription(ans);
   }, []);
 
   useEffect(() => {
-    // const peer = new WebRTCPeerService();
     peer.peer.addEventListener("negotiationneeded", handleNegotiationNeeded);
 
     return () => {
@@ -109,7 +100,6 @@ const Room = () => {
   }, [handleNegotiationNeeded]);
 
   useEffect(() => {
-    // const peer = new WebRTCPeerService();
     peer.peer.addEventListener("track", async (e) => {
       const remoteStream = e.streams;
       console.log("GOT TRACKS!!");
@@ -140,37 +130,55 @@ const Room = () => {
     handleNegotiationNeededFinal,
   ]);
   return (
-    <div>
+    <div className="room-container">
       <h1>This is Room for chat.</h1>
-      <h4>{remoteSocketId ? "Connected" : "No one in room"}</h4>
-      {myStream && <button onClick={sendStreams}>send stream</button>}
-      {remoteSocketId && <button onClick={handleCallUser}>Call</button>}
-
-      {myStream && (
-        <>
-          <h2>my stream</h2>
-          <ReactPlayer
-            playing
-            muted
-            width="100px"
-            height="200px"
-            url={myStream}
-          />
-        </>
+      {remoteSocketId ? (
+        <h4 className="online">Connected</h4>
+      ) : (
+        <h4 style={{ color: "grey" }}>No one in room</h4>
       )}
+      {/* <h4>{remoteSocketId ? "Connected" : "No one in room"}</h4> */}
 
-      {remoteStream && (
-        <>
-          <h2>remote stream</h2>
-          <ReactPlayer
-            playing
-            muted
-            width="100px"
-            height="200px"
-            url={remoteStream}
-          />
-        </>
-      )}
+      <div className="options">
+        {myStream && (
+          <button className="btn-send-stream" onClick={sendStreams}>
+            send stream
+          </button>
+        )}
+        {remoteSocketId && (
+          <button className="btn-call" onClick={handleCallUser}>
+            Call
+          </button>
+        )}
+      </div>
+
+      <div className="video-stream">
+        {myStream && (
+          <>
+            <h2>my stream</h2>
+            <ReactPlayer
+              playing
+              muted
+              width="300px"
+              height="500px"
+              url={myStream}
+            />
+          </>
+        )}
+
+        {remoteStream && (
+          <>
+            <h2>remote stream</h2>
+            <ReactPlayer
+              playing
+              muted
+              width="300px"
+              height="500px"
+              url={remoteStream}
+            />
+          </>
+        )}
+      </div>
     </div>
   );
 };
