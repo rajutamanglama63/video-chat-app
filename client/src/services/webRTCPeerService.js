@@ -1,4 +1,4 @@
-export class WebRTCPeerService {
+class WebRTCPeerService {
   constructor() {
     // RTCPeerConnection is built in web api provided by modern web browser to established peer to peer -
     // - connection for real time communication such as audio and video
@@ -7,8 +7,8 @@ export class WebRTCPeerService {
         iceServers: [
           {
             urls: [
-              "stun: stul.l.google.com: 19302",
-              "stun: global.stun.twilio.com: 3478",
+              "stun:stun.l.google.com:19302",
+              "stun:global.stun.twilio.com:3478",
             ],
           },
         ],
@@ -24,6 +24,21 @@ export class WebRTCPeerService {
       return offer;
     }
   }
+
+  async getAnswer(offer) {
+    if (this.peer) {
+      await this.peer.setRemoteDescription(offer);
+      const ans = await this.peer.createAnswer();
+      await this.peer.setLocalDescription(new RTCSessionDescription(ans));
+      return ans;
+    }
+  }
+
+  async setLocalDescription(ans) {
+    if (this.peer) {
+      await this.peer.setRemoteDescription(new RTCSessionDescription(ans));
+    }
+  }
 }
 
-// export default new WebRTCPeerService();
+export default new WebRTCPeerService();
