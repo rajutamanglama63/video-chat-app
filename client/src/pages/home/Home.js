@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { SocketContext } from "../../context/SocketContext";
 import "./home.css";
 
-const Home = () => {
+const Home = ({ userList, setUserList }) => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState({
     emailId: "",
@@ -27,9 +27,10 @@ const Home = () => {
   const handleJoinRoom = useCallback(
     (data) => {
       const { emailId, roomId } = data;
+      setUserList([...userList, emailId]);
       navigate(`/${roomId}`);
     },
-    [navigate]
+    [navigate, setUserList, userList]
   );
 
   useEffect(() => {

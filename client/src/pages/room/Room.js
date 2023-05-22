@@ -4,17 +4,24 @@ import peer from "../../services/webRTCPeerService";
 import { SocketContext } from "../../context/SocketContext";
 import "./room.css";
 
-const Room = () => {
+const Room = ({ userList, setUserList }) => {
   const { socket } = useContext(SocketContext);
 
   const [remoteSocketId, setRemoteSocketId] = useState(null);
   const [myStream, setMyStream] = useState();
   const [remoteStream, setRemoteStream] = useState();
+  const [userEmail, setUserEmail] = useState("");
+  const [caller, setCaller] = useState("");
 
-  const handleJoinedUser = useCallback(({ emailId, id }) => {
-    console.log(`User with ${emailId} joined the room.`);
-    setRemoteSocketId(id);
-  }, []);
+  const handleJoinedUser = useCallback(
+    ({ emailId, id }) => {
+      console.log(`User with ${emailId} joined the room.`);
+      setUserEmail(emailId);
+      setUserList([...userList, emailId]);
+      setRemoteSocketId(id);
+    },
+    [setUserList, userList]
+  );
 
   const handleCallUser = useCallback(async () => {
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -24,6 +31,7 @@ const Room = () => {
 
     const offer = await peer.getOffer();
     socket.emit("user:call", { to: remoteSocketId, offer });
+
     setMyStream(stream);
   }, [remoteSocketId, socket]);
 
@@ -37,6 +45,7 @@ const Room = () => {
         });
 
         setMyStream(stream);
+        setCaller(from);
         console.log("Incoming Call: ", from, offer);
 
         const ans = await peer.getAnswer(offer);
@@ -59,7 +68,6 @@ const Room = () => {
     async ({ from, ans }) => {
       try {
         await peer.setLocalDescription(ans);
-
         console.log("response back from call receiver");
         sendStreams();
       } catch (error) {
@@ -131,53 +139,62 @@ const Room = () => {
   ]);
   return (
     <div className="room-container">
-      <h1>This is Room for chat.</h1>
+      <h1>Chatting Room</h1>
+
       {remoteSocketId ? (
-        <h4 className="online">Connected</h4>
+        <h4 className="online">Another user joined the room.</h4>
       ) : (
-        <h4 style={{ color: "grey" }}>No one in room</h4>
+        <h4 style={{ color: "grey" }}>No one in the room</h4>
       )}
+
       {/* <h4>{remoteSocketId ? "Connected" : "No one in room"}</h4> */}
 
       <div className="options">
-        {myStream && (
-          <button className="btn-send-stream" onClick={sendStreams}>
-            send stream
-          </button>
+        {myStream && caller && (
+          <>
+            <p>Incoming call from {caller}</p>
+            <button className="btn-send-stream" onClick={sendStreams}>
+              call receive
+            </button>
+          </>
         )}
         {remoteSocketId && (
           <button className="btn-call" onClick={handleCallUser}>
-            Call
+            {`call ${userEmail}`}
           </button>
         )}
       </div>
 
       <div className="video-stream">
-        {myStream && (
-          <>
-            <h2>my stream</h2>
-            <ReactPlayer
-              playing
-              muted
-              width="300px"
-              height="500px"
-              url={myStream}
-            />
-          </>
-        )}
+        <div className="my-stream">
+          {myStream && (
+            <>
+              <h2>my stream</h2>
+              <ReactPlayer
+                playing
+                muted
+                width="300px"
+                height="500px"
+                url={myStream}
+              />
+            </>
+          )}
+        </div>
 
-        {remoteStream && (
-          <>
-            <h2>remote stream</h2>
-            <ReactPlayer
-              playing
-              muted
-              width="300px"
-              height="500px"
-              url={remoteStream}
-            />
-          </>
-        )}
+        <div className="remote-stream">
+          {remoteStream && (
+            <>
+              <h2>remote stream</h2>
+              <ReactPlayer
+                playing
+                muted
+                width="300px"
+                height="500px"
+                url={remoteStream}
+              />
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -14,21 +14,22 @@
 
 .options {
   display: flex;
-  justify-content: space-between;
-  width: 10%;
+  justify-content: center;
+  flex-direction: column;
 }
 
 .btn-send-stream {
-  padding: 1rem;
+  padding: 0.5rem 1rem;
   cursor: pointer;
   background-color: rgb(228, 202, 202);
   font-size: large;
   border-radius: 5px;
   border: 2px solid black;
+  margin: 1rem 0;
 }
 
 .btn-call {
-  padding: 1rem 3rem;
+  padding: 0.5rem 1rem;
   cursor: pointer;
   background-color: rgb(83, 247, 111);
   font-size: large;
@@ -39,5 +40,23 @@
 .video-stream {
   width: 100%;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.my-stream {
+  flex: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.remote-stream {
+  flex: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
 }
