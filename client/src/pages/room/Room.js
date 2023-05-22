@@ -1,4 +1,5 @@
 import React, { useCallback, useContext, useEffect, useState } from "react";
+import { Icon } from "@iconify/react";
 import ReactPlayer from "react-player";
 import peer from "../../services/webRTCPeerService";
 import { SocketContext } from "../../context/SocketContext";
@@ -12,6 +13,11 @@ const Room = ({ userList, setUserList }) => {
   const [remoteStream, setRemoteStream] = useState();
   const [userEmail, setUserEmail] = useState("");
   const [caller, setCaller] = useState("");
+  const [isMuted, setIsMuted] = useState(false);
+
+  const handleMuteToggle = () => {
+    setIsMuted(!isMuted);
+  };
 
   const handleJoinedUser = useCallback(
     ({ emailId, id }) => {
@@ -172,11 +178,18 @@ const Room = ({ userList, setUserList }) => {
               <h2>my stream</h2>
               <ReactPlayer
                 playing
-                muted
+                muted={isMuted}
                 width="300px"
-                height="500px"
+                height="200px"
                 url={myStream}
               />
+              <button onClick={handleMuteToggle}>
+                {isMuted ? (
+                  <Icon icon="ant-design:audio-muted-outlined" />
+                ) : (
+                  <Icon icon="ant-design:audio-outlined" />
+                )}
+              </button>
             </>
           )}
         </div>
@@ -187,9 +200,9 @@ const Room = ({ userList, setUserList }) => {
               <h2>remote stream</h2>
               <ReactPlayer
                 playing
-                muted
+                muted={isMuted}
                 width="300px"
-                height="500px"
+                height="200px"
                 url={remoteStream}
               />
             </>
