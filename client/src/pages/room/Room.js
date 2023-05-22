@@ -1,4 +1,10 @@
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Icon } from "@iconify/react";
 import ReactPlayer from "react-player";
 import peer from "../../services/webRTCPeerService";
@@ -14,6 +20,10 @@ const Room = ({ userList, setUserList }) => {
   const [userEmail, setUserEmail] = useState("");
   const [caller, setCaller] = useState("");
   const [isMuted, setIsMuted] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [audioChunks, setAudioChunks] = useState([]);
+
+  const mediaRecorderRef = useRef(null);
 
   const handleMuteToggle = () => {
     setIsMuted(!isMuted);
@@ -122,6 +132,53 @@ const Room = ({ userList, setUserList }) => {
   }, []);
 
   useEffect(() => {
+    let mediaRecorder;
+
+    const handleDataAvailable = (event) => {
+      if (event.data.size > 0) {
+        setAudioChunks((prevChunks) => [...prevChunks, event.data]);
+      }
+    };
+
+    if (recording) {
+      navigator.mediaDevices
+        .getUserMedia({ audio: true })
+        .then((stream) => {
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.addEventListener("dataavailable", handleDataAvailable);
+          mediaRecorder.start();
+
+          mediaRecorderRef.current = mediaRecorder;
+        })
+        .catch((error) => {
+          console.error("Error accessing microphone", error);
+        });
+    }
+
+    return () => {
+      if (mediaRecorder) {
+        mediaRecorder.removeEventListener("dataavailable", handleDataAvailable);
+        mediaRecorder.stop();
+      }
+    };
+  }, [recording]);
+
+  const handleStartRecording = () => {
+    setAudioChunks([]);
+    setRecording(true);
+  };
+
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setRecording(false);
+
+      const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+      // send recorded audio to backend
+    }
+  };
+
+  useEffect(() => {
     socket.on("user:joined", handleJoinedUser);
     socket.on("incomming:call", handleIncomingcall);
     socket.on("notify:res:to:caller", handleCallResponse);
@@ -208,6 +265,14 @@ const Room = ({ userList, setUserList }) => {
             </>
           )}
         </div>
+      </div>
+
+      <div>
+        {recording ? (
+          <button onClick={handleStopRecording}>Stop Recording</button>
+        ) : (
+          <button onClick={handleStartRecording}>Start Recording</button>
+        )}
       </div>
     </div>
   );
