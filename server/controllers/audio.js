@@ -9,7 +9,7 @@ audioRouter.post("/", async (req, res) => {
   console.log("req body: ", req.body);
   try {
     const { audioData } = req.body;
-    console.log("audioData: ", audioData);
+    console.log("audio: ", audioData);
 
     const newAudioChunks = await prisma.audio.create({
       data: {
