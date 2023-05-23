@@ -1,6 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const audioRouter = require("./controllers/audio");
 
 dotenv.config();
 
@@ -23,6 +24,8 @@ app.use(express.json());
 app.get("/", (req, res) => {
   res.status(200).send("Hello from the server side...");
 });
+
+app.use("/api/audio", audioRouter);
 
 // this line of code is for tracking which emailId is in which room
 const emailToSocketMapping = new Map();

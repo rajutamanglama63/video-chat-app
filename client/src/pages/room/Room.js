@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { Icon } from "@iconify/react";
 import ReactPlayer from "react-player";
+import axios from "axios";
 import peer from "../../services/webRTCPeerService";
 import { SocketContext } from "../../context/SocketContext";
 import "./room.css";
@@ -21,9 +22,16 @@ const Room = ({ userList, setUserList }) => {
   const [caller, setCaller] = useState("");
   const [isMuted, setIsMuted] = useState(false);
   const [recording, setRecording] = useState(false);
-  const [audioChunks, setAudioChunks] = useState([]);
+  console.log("recording: ", recording);
+  // const [audioChunks, setAudioChunks] = useState([]);
 
-  const mediaRecorderRef = useRef(null);
+  // const mediaRecorderRef = useRef(null);
+
+  const [audioStream, setAudioStream] = useState(null);
+  if (audioStream !== null) {
+    console.log("audioStream: ", audioStream.getTracks());
+  }
+  const [mediaRecorder, setMediaRecorder] = useState(null);
 
   const handleMuteToggle = () => {
     setIsMuted(!isMuted);
@@ -131,52 +139,63 @@ const Room = ({ userList, setUserList }) => {
     });
   }, []);
 
-  useEffect(() => {
-    let mediaRecorder;
+  // useEffect(() => {
+  //   let mediaRecorder;
 
-    const handleDataAvailable = (event) => {
-      if (event.data.size > 0) {
-        setAudioChunks((prevChunks) => [...prevChunks, event.data]);
-      }
-    };
+  //   const handleDataAvailable = (event) => {
+  //     if (event.data.size > 0) {
+  //       setAudioChunks((prevChunks) => [...prevChunks, event.data]);
+  //     }
+  //   };
 
-    if (recording) {
-      navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then((stream) => {
-          mediaRecorder = new MediaRecorder(stream);
-          mediaRecorder.addEventListener("dataavailable", handleDataAvailable);
-          mediaRecorder.start();
+  //   if (recording) {
+  //     navigator.mediaDevices
+  //       .getUserMedia({ audio: true })
+  //       .then((stream) => {
+  //         mediaRecorder = new MediaRecorder(stream);
+  //         mediaRecorder.addEventListener("dataavailable", handleDataAvailable);
+  //         mediaRecorder.start();
 
-          mediaRecorderRef.current = mediaRecorder;
-        })
-        .catch((error) => {
-          console.error("Error accessing microphone", error);
-        });
-    }
+  //         mediaRecorderRef.current = mediaRecorder;
+  //       })
+  //       .catch((error) => {
+  //         console.error("Error accessing microphone", error);
+  //       });
+  //   }
 
-    return () => {
-      if (mediaRecorder) {
-        mediaRecorder.removeEventListener("dataavailable", handleDataAvailable);
-        mediaRecorder.stop();
-      }
-    };
-  }, [recording]);
+  //   return () => {
+  //     if (mediaRecorderRef.current) {
+  //       mediaRecorderRef.current.removeEventListener(
+  //         "dataavailable",
+  //         handleDataAvailable
+  //       );
+  //       mediaRecorderRef.current.stop();
+  //       mediaRecorderRef.current = null;
+  //     }
+  //   };
+  // }, [recording]);
 
-  const handleStartRecording = () => {
-    setAudioChunks([]);
-    setRecording(true);
-  };
+  // const handleStartRecording = () => {
+  //   setAudioChunks([]);
+  //   setRecording(true);
+  // };
 
-  const handleStopRecording = () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-      setRecording(false);
+  // const handleStopRecording = async () => {
+  //   if (mediaRecorderRef.current) {
+  //     console.log("mediaRecRef: ", mediaRecorderRef.current);
+  //     mediaRecorderRef.current.stop();
+  //     setRecording(false);
 
-      const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
-      // send recorded audio to backend
-    }
-  };
+  //     const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+  //     console.log("audioBlob: ", audioBlob);
+  //     // send recorded audio to backend
+  //     const response = await axios.post(
+  //       "http://localhost:5000/api/audio",
+  //       audioBlob
+  //     );
+  //     // console.log("response: ", response);
+  //   }
+  // };
 
   useEffect(() => {
     socket.on("user:joined", handleJoinedUser);
@@ -200,6 +219,40 @@ const Room = ({ userList, setUserList }) => {
     handleIncomingNegotiationNeeded,
     handleNegotiationNeededFinal,
   ]);
+
+  const startAudioRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+
+      recorder.start();
+      setAudioStream(stream);
+      setMediaRecorder(recorder);
+      setRecording(true);
+    } catch (error) {
+      console.error("Error accessing audio device:", error);
+    }
+  };
+
+  const stopAudioRecording = async () => {
+    if (mediaRecorder) {
+      mediaRecorder.stop();
+      audioStream.getTracks().forEach((track) => track.stop());
+
+      const audioBlob = new Blob(audioStream.getTracks(), {
+        type: "audio/webm",
+      });
+      console.log("audioBlob: ", audioBlob);
+      // send recorded audio to backend
+      const response = await axios.post(
+        "http://localhost:5000/api/audio",
+        audioBlob
+      );
+      setAudioStream(null);
+      setMediaRecorder(null);
+      setRecording(false);
+    }
+  };
   return (
     <div className="room-container">
       <h1>Chatting Room</h1>
@@ -268,11 +321,15 @@ const Room = ({ userList, setUserList }) => {
       </div>
 
       <div>
-        {recording ? (
-          <button onClick={handleStopRecording}>Stop Recording</button>
-        ) : (
-          <button onClick={handleStartRecording}>Start Recording</button>
-        )}
+        {/* {recording ? ( */}
+        <button onClick={startAudioRecording} disabled={recording}>
+          start recording
+        </button>
+        {/* ) : ( */}
+        <button onClick={stopAudioRecording} disabled={!recording}>
+          stop recording
+        </button>
+        {/* )} */}
       </div>
     </div>
   );
